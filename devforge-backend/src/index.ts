@@ -6,8 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// POST /recommendations
-// Accepts: learningStyle, favoriteTopics, completedExercises, userApiKey
 app.post("/recommendations", async (req, res) => {
   const { learningStyle, favoriteTopics, completedExercises, userApiKey } =
     req.body;
@@ -20,32 +18,41 @@ app.post("/recommendations", async (req, res) => {
 
   const prompt = `
     You are a coding tutor for neurodivergent students.
-Recommend 3 coding exercises and 3 lessons based on:
-- Learning style: ${learningStyle}
-- Topics: ${favoriteTopics.join(", ")}
-- Already completed exercises: ${completedExercises.join(", ")}
+    Recommend 3 coding exercises and 3 lessons based on:
+    - Learning style: ${learningStyle}
+    - Topics: ${favoriteTopics.join(", ")}
+    - Already completed exercises: ${completedExercises.join(", ")}
 
-Format your response as a JSON object with the following structure:
-{
-    "exercises": [{"title": "", "topic": "", "difficulty": ""}],
-   "lessons": [{"title": "", "topic": "", "description": ""}]
-}
-
-The exercises should be relevant to the topics and the lessons should be relevant to the topics and the learning style.
-The exercises should be challenging but not too difficult.
-The lessons should be challenging but not too difficult.
-The lessons should be relevant to the topics and the learning style.
-The lessons should be relevant to the topics and the learning style.
-    `;
+    Format your response as a JSON object with the following structure:
+    {
+      "exercises": [{"title": "", "topic": "", "difficulty": ""}],
+      "lessons": [{"title": "", "topic": "", "description": ""}]
+    }
+    The exercises and lessons should be relevant to the topics and learning style,
+    challenging but not too difficult.
+  `;
 
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
+      max_tokens: 800,
     });
-    res.json({ recommendation: response.choices[0].message?.content });
+
+    const rawContent = response.choices[0].message?.content || "{}";
+
+    // Parse the JSON response safely
+    let recommendation;
+    try {
+      recommendation = JSON.parse(rawContent);
+    } catch {
+      console.warn("Failed to parse GPT response, returning raw content");
+      recommendation = { exercises: [], lessons: [], raw: rawContent };
+    }
+
+    res.json({ recommendation });
   } catch (error) {
-    console.error(error);
+    console.error("AI Recommendation Error:", error);
     res.status(500).json({ error: "Failed to generate recommendations" });
   }
 });

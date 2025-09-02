@@ -9,63 +9,76 @@ import Card from "../components/ui/Card";
 
 export default function Dashboard() {
   const { user } = useUser();
-  const [recommendations, setRecommendations] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<{
+    exercises: any[];
+    lessons: any[];
+  }>({ exercises: [], lessons: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchRecommendations() {
+    const fetchRecommendations = async () => {
       if (!user.openaiKey) {
-        setError(
-          "No OpenAI API key found. Please provide your key in onboarding."
-        );
+        setError("No OpenAI key provided. Please enter it in onboarding.");
         setLoading(false);
         return;
       }
 
       setLoading(true);
       setError("");
+
       try {
         const { data } = await axios.post(
           "http://localhost:4000/recommendations",
-          user
+          {
+            learningStyle: user.learningStyle,
+            favoriteTopics: user.favoriteTopics,
+            completedExercises: user.completedExercises || [],
+            userApiKey: user.openaiKey,
+          }
         );
-        setRecommendations(data);
+
+        if (data.recommendation) {
+          setRecommendation({
+            exercises: data.recommendation.exercises || [],
+            lessons: data.recommendation.lessons || [],
+          });
+        } else {
+          setError("No recommendations returned from AI.");
+        }
       } catch (err) {
-        console.error("Failed to fetch AI recommendations", err);
+        console.error("Failed to fetch AI recommendations:", err);
         setError(
           "Failed to load recommendations. Check your API key or network."
         );
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchRecommendations();
   }, [user]);
 
   return (
     <main className="min-h-screen bg-gray-900 text-white px-6 md:px-20 py-10">
-      {/* Welcome Banner */}
       <WelcomeBanner name={user.name} learningStyle={user.learningStyle} />
 
-      {/* Loading State */}
       {loading && <Card>Loading your personalized lessons...</Card>}
 
-      {/* Error State */}
       {error && <Card>{error}</Card>}
 
-      {/* Recommendations */}
-      {!loading && !error && recommendations && (
+      {!loading && !error && (
         <>
           <MicroExercisesList
             favoriteTopics={user.favoriteTopics}
-            exercises={recommendations.exercises}
+            exercises={recommendation.exercises}
           />
+
           <RecommendedLessons
             favoriteTopics={user.favoriteTopics}
-            lessons={recommendations.lessons}
+            lessons={recommendation.lessons}
           />
+
           <QuickQuizCard favoriteTopics={user.favoriteTopics} />
         </>
       )}
