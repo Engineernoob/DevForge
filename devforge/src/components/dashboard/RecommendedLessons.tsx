@@ -3,18 +3,11 @@ import Button from "../ui/Button";
 
 interface Props {
   favoriteTopics: string[];
+  lessons?: { title: string; topic: string; description: string }[];
 }
 
-export default function RecommendedLessons({ favoriteTopics }: Props) {
-  const lessons = [
-    { title: "React Hooks Deep Dive", topic: "React" },
-    { title: "Graph Algorithms", topic: "Algorithms" },
-    { title: "Node.js REST APIs", topic: "Node.js" },
-  ];
-
-  const filtered = lessons.filter((lesson) =>
-    favoriteTopics.includes(lesson.topic)
-  );
+export default function RecommendedLessons({ favoriteTopics, lessons }: Props) {
+  const filtered = lessons?.filter((lesson) => favoriteTopics.includes(lesson.topic)) || [];
 
   return (
     <section className="mb-10">
@@ -23,7 +16,7 @@ export default function RecommendedLessons({ favoriteTopics }: Props) {
         {filtered.map((lesson) => (
           <Card key={lesson.title}>
             <h3 className="font-semibold text-xl mb-2">{lesson.title}</h3>
-            <p className="text-gray-400">Focused on {lesson.topic} concepts.</p>
+            <p className="text-gray-400">{lesson.description}</p>
             <Button className="mt-4">Start Lesson</Button>
           </Card>
         ))}
