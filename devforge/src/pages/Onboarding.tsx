@@ -16,20 +16,24 @@ export default function Onboarding() {
     openaiKey: "",
   });
   const navigate = useNavigate();
-  const { user, updateUserField } = useUser();
+  const { updateUserField } = useUser();
+
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 4));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const handleComplete = () => {
+    // Update UserContext with final userData
     updateUserField("name", userData.name);
     updateUserField("learningStyle", userData.learningStyle);
     updateUserField("favoriteTopics", userData.favoriteTopics);
+    updateUserField("openaiKey", userData.openaiKey); // Save OpenAI key in memory
     navigate("/dashboard"); // redirect after onboarding
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white px-6">
       <ProgressBar step={step} />
+
       {step === 1 && <Welcome nextStep={nextStep} setUserData={setUserData} />}
       {step === 2 && (
         <Preferences
@@ -54,46 +58,6 @@ export default function Onboarding() {
           handleComplete={handleComplete}
         />
       )}
-      {step === 5 && <ProgressBar step={step} />}
-
-      <form>
-        <input
-          type="text"
-          placeholder="Name"
-          value={user.name}
-          onChange={(e) => updateUserField("name", e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="OpenAI API Key"
-          value={userData.openaiKey}
-          onChange={(e) =>
-            setUserData({ ...userData, openaiKey: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Learning Style"
-          value={userData.learningStyle}
-          onChange={(e) =>
-            setUserData({ ...userData, learningStyle: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Favorite Topics"
-          value={userData.favoriteTopics.join(", ")}
-          onChange={(e) =>
-            setUserData({
-              ...userData,
-              favoriteTopics: e.target.value.split(", "),
-            })
-          }
-        />
-        <button type="button" onClick={handleComplete}>
-          Complete
-        </button>
-      </form>
     </div>
   );
 }
